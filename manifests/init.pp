@@ -74,6 +74,12 @@
 #
 # @param journald_settings
 #   Config Hash that is used to configure settings in journald.conf
+
+# @param require_daemon_reload
+#   If true then run a collector so that all services require systemctl::daemon_reload
+#   This means that if the service has to be reloaded then it will always happen
+#   after the systemctl daemon-reload and also means users don't need to explicitly
+#   remember to require systemctl::daemon_reload.
 #
 class systemd (
   Hash[String,Hash[String, Any]]                         $service_limits,
@@ -100,9 +106,13 @@ class systemd (
   Boolean                                                $purge_dropin_dirs,
   Boolean                                                $manage_journald,
   Systemd::JournaldSettings                              $journald_settings,
+  Boolean                                                $require_daemon_reload,
 ){
 
   contain systemd::systemctl::daemon_reload
+  if $require_daemon_reload {
+    Class['systemd::systemctl::daemon_reload'] -> Service <| provider == 'systemd' |>
+  }
 
   create_resources('systemd::service_limits', $service_limits)
 
